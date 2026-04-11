@@ -1,0 +1,14 @@
+.env
+.codex/
+.venv/
+__pycache__/
+vendor_py/
+tb_logs/
+checkpoints/
+smoke_runs/
+render_check/
+render_cleanup_check/
+video_frames/
+video_inspect_*/
+MUJOCO_LOG.TXT
+*.pyc

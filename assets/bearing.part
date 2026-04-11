@@ -1,0 +1,13 @@
+{
+    "configuration": "default",
+    "documentId": "1a70085e7ca7803453a0c9fb",
+    "documentMicroversion": "dc3fdd49dd8d07e2630cefc7",
+    "elementId": "1774f5aa2a4abe47f6de5831",
+    "fullConfiguration": "default",
+    "id": "Mzg4LJGkWhDvzgawt",
+    "isStandardContent": false,
+    "name": "Bearing <5>",
+    "partId": "JHD",
+    "suppressed": false,
+    "type": "Part"
+}

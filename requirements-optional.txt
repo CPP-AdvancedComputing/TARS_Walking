@@ -1,0 +1,5 @@
+# Optional/local-only extras used by side scripts and viewers.
+# These are not required for training with train.py.
+pybullet
+pyglet
+yourdfpy

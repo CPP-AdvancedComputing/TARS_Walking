@@ -1,0 +1,29 @@
+<mujoco model="tars">
+    <compiler angle="radian" meshdir="."/>
+    
+    <option gravity="0 0 -9.81"/>
+    
+    <worldbody>
+        <light pos="0 0 3" dir="0 0 -1"/>
+        <geom name="floor" type="plane" size="5 5 0.1" rgba="0.8 0.8 0.8 1"/>
+        <body name="tars" pos="0 0 0.8">
+            <freejoint/>
+            <include file="robot_mujoco.urdf"/>
+        </body>
+    </worldbody>
+
+    <actuator>
+        <position name="shoulder_l0" joint="shoulder_prismatic_l0" kp="100"/>
+        <position name="shoulder_l1" joint="shoulder_prismatic_l1" kp="100"/>
+        <position name="shoulder_l2" joint="shoulder_prismatic_l2" kp="100"/>
+        <position name="shoulder_l3" joint="shoulder_prismatic_l3" kp="100"/>
+        <position name="hip_l0"      joint="hip_revolute_l0"       kp="50"/>
+        <position name="hip_l1"      joint="hip_revolute_l1"       kp="50"/>
+        <position name="hip_l2"      joint="hip_revolute_l2"       kp="50"/>
+        <position name="hip_l3"      joint="hip_revolute_l3"       kp="50"/>
+        <position name="knee_l0"     joint="knee_prismatic_l0"     kp="100"/>
+        <position name="knee_l1"     joint="knee_prismatic_l1"     kp="100"/>
+        <position name="knee_l2"     joint="knee_prismatic_l2"     kp="100"/>
+        <position name="knee_l3"     joint="knee_prismatic_l3"     kp="100"/>
+    </actuator>
+</mujoco>

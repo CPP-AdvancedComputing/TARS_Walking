@@ -1,0 +1,13 @@
+{
+    "configuration": "default",
+    "documentId": "1a70085e7ca7803453a0c9fb",
+    "documentMicroversion": "dc3fdd49dd8d07e2630cefc7",
+    "elementId": "5cf9e9f847725d0e79d5862e",
+    "fullConfiguration": "default",
+    "id": "MXLvxtNLZcBU/6PAt",
+    "isStandardContent": false,
+    "name": "Lead Screw <21>",
+    "partId": "JHD",
+    "suppressed": false,
+    "type": "Part"
+}

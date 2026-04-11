@@ -1,0 +1,14 @@
+# Core training/runtime dependencies
+# This file is intended to install cleanly on headless machines and clusters.
+numpy==2.4.3
+gymnasium==1.2.3
+mujoco==3.6.0
+stable-baselines3==2.7.1
+Pillow==12.1.1
+tensorboard
+setuptools<81
+
+# Note for GPU clusters:
+# stable-baselines3 pulls in torch transitively. If your cluster needs a
+# CUDA-specific torch build, install the cluster-approved torch wheel first,
+# then install the rest of this file.
