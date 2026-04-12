@@ -66,6 +66,7 @@ SYNC_FILES = [
     "search_phase1_chain_support_offsets.py",
     "search_phase2_chain_return_offsets.py",
     "search_phase2_chain_timing_offsets.py",
+    "search_phase2_return_mechanics.py",
     "search_phase2_leg1_return_offsets.py",
     "sweep_l1_contact_geometry_z.py",
     "sweep_l1_actuator_strength.py",

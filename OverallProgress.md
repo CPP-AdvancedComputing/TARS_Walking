@@ -1022,6 +1022,37 @@ Current state of the project:
   - rationale:
     - this aligns switch logic with the project's stricter “meaningfully planted” interpretation
     - and prevents edge-touch transients from automatically invalidating an otherwise correct return mechanic
+  - follow-up tooling blocker:
+    - the old `search_phase2_chain_timing_offsets.py` harness no longer produces meaningful scores against the current refactored env
+    - every candidate returned the sentinel failure score without ever observing a valid phase-2 scoring window
+    - interpretation:
+      - the harness assumptions are stale and should not be used as evidence for current return timing decisions
+  - direct timing change kept after that:
+    - phase `2` middle-leg liftoff now starts earlier:
+      - `PHASE_LIFTOFF_START_PROGRESS[2] = 0.35`
+    - phase `2` outer-leg touchdown now starts earlier:
+      - `PHASE_TOUCHDOWN_START_PROGRESS[2] = 0.55`
+  - rationale:
+    - current traces showed middle support lingering too long and outer forward-rotation starting too late
+    - this change is intended to force the return mechanics to begin earlier in the phase rather than letting the old support pattern dominate most of phase `2`
+  - follow-up result:
+    - the earlier timing change only moved the trace marginally
+    - outer forward rotation remained weak
+    - middle-edge behavior remained brief and unstable
+    - conclusion:
+      - timing alone is not enough to fix `2 -> 0`
+  - new tooling kept:
+    - [search_phase2_return_mechanics.py](/mnt/c/Users/anike/tars-urdf/search_phase2_return_mechanics.py)
+  - purpose:
+    - replace the stale phase-2 search harnesses with a scorer aligned to current project requirements
+    - score:
+      - outer forward rotation
+      - middle edge-touch behavior
+      - planted-aware readiness metrics
+      - actual return switch if achieved
+  - harness fix:
+    - initial run of `search_phase2_return_mechanics.py` failed because it did not initialize the env's step bookkeeping fields (`initial_height`, `prev_body_z`, etc.) before calling `step()`
+    - fixed in the script and rerun from that corrected state
 
 ## Update Log
 

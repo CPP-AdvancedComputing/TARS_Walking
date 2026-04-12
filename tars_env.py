@@ -197,12 +197,12 @@ class TARSEnv(gymnasium.Env):
     PHASE_LIFTOFF_START_PROGRESS = {
         0: 0.60,
         1: 0.25,
-        2: 0.60,
+        2: 0.35,
     }
     PHASE_TOUCHDOWN_START_PROGRESS = {
         0: 0.45,
         1: 0.80,
-        2: 0.80,
+        2: 0.55,
     }
     PHASE_TOUCHDOWN_START_PROGRESS_BY_LEG = {
         0: {
