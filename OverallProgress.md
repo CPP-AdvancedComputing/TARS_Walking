@@ -300,6 +300,19 @@ Current working hypothesis:
       - phase 2 outer pair perpendicular
       - middle pair outward
       - `2 -> 0` middle pair leans forward while the outer pair rotates forward into perpendicular support
+- Follow-up validation result:
+  - [run_logs/tide_diag_phase_chain_0_1_2_20260412_phase2posturefix.log](/mnt/c/Users/anike/tars-urdf/run_logs/tide_diag_phase_chain_0_1_2_20260412_phase2posturefix.log)
+  - this patch was a regression and has been reverted
+  - observed failure:
+    - the chained trace never left phase `0`
+    - phase `0 -> 1` collapsed to `block=1`
+    - support degraded toward `[1,1,1,0]` instead of reaching the clean all-feet-down handoff
+    - the phase-2-oriented posture changes contaminated earlier phase behavior through the shared reference path
+  - do not repeat:
+    - do not apply broad phase-2 pair offsets or aggressive phase-2 touchdown timing changes without first isolating them from phase-0 / phase-1 reference integrity
+  - updated interpretation:
+    - the next fix for `2 -> 0` should be more localized than broad phase-2 pose forcing
+    - likely candidates are transition-only return targets / return-only control offsets rather than phase-wide reference reshaping
 
 - Found a real return-path regression in the support-latch implementation:
   - `_begin_phase()` was not resetting `phase_switch_support_latched`

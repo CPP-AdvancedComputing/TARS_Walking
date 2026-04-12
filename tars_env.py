@@ -149,13 +149,6 @@ class TARSEnv(gymnasium.Env):
             (0, 3): np.array([0.0, 0.25, -0.05], dtype=np.float64),
             (1, 2): np.array([-0.10, -0.25, -0.10], dtype=np.float64),
         },
-        2: {
-            # Phase 2 should present the outer pair as the perpendicular return
-            # receivers while the middle pair stays rotated outward before the
-            # lean-forward handoff back into phase 0.
-            (0, 3): np.array([0.0, 0.15, 0.0], dtype=np.float64),
-            (1, 2): np.array([0.05, -0.10, 0.0], dtype=np.float64),
-        },
     }
     IK_DAMPING = 5e-4
     IK_STEP_SCALE = 0.55
@@ -204,30 +197,22 @@ class TARSEnv(gymnasium.Env):
     PHASE_LIFTOFF_START_PROGRESS = {
         0: 0.60,
         1: 0.25,
-        2: 0.50,
+        2: 0.35,
     }
     PHASE_TOUCHDOWN_START_PROGRESS = {
         0: 0.45,
         1: 0.80,
-        2: 0.35,
+        2: 0.55,
     }
     PHASE_TOUCHDOWN_START_PROGRESS_BY_LEG = {
         0: {
             1: 0.65,
             2: 0.00,
         },
-        2: {
-            0: 0.35,
-            3: 0.35,
-        },
     }
     PHASE_TOUCHDOWN_CTRL_OFFSETS = {
         0: {
             2: np.array([-0.20, -0.25, -0.05], dtype=np.float64),
-        },
-        2: {
-            0: np.array([0.0, 0.20, 0.05], dtype=np.float64),
-            3: np.array([0.0, 0.20, 0.05], dtype=np.float64),
         },
     }
     SWING_TRACK_LIFT_HEIGHT = 0.003
