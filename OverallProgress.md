@@ -286,6 +286,20 @@ Current working hypothesis:
   - purpose:
     - stop relying on contact-mask-only interpretation for phase-2 posture and return mechanics
     - make the next return fixes measurable against the user’s clarified geometry
+- New direct phase-2 mechanics patch applied:
+  - added explicit phase-2 pair-shared offsets in [tars_env.py](/mnt/c/Users/anike/tars-urdf/tars_env.py)
+    - outer pair (`l0`,`l3`) biased toward a more perpendicular return-receiver pose
+    - middle pair (`l1`,`l2`) biased to stay outward before the lean-forward handoff
+  - shifted phase-2 timing:
+    - later middle-pair liftoff start (`phase 2` liftoff now starts at `0.50`)
+    - earlier outer-pair touchdown start (`phase 2` touchdown now starts at `0.35`)
+  - added phase-2 touchdown control offsets for both outer legs so the return tries to rotate them forward instead of waiting for a late contact-only catch
+  - rationale:
+    - the current non-redundant blocker is still weak phase-2 posture / return geometry
+    - this patch is the first direct code change aimed at the newly clarified requirement:
+      - phase 2 outer pair perpendicular
+      - middle pair outward
+      - `2 -> 0` middle pair leans forward while the outer pair rotates forward into perpendicular support
 
 - Found a real return-path regression in the support-latch implementation:
   - `_begin_phase()` was not resetting `phase_switch_support_latched`
