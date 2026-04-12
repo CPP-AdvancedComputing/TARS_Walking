@@ -108,6 +108,7 @@ def snapshot_metrics(env, step, reward, baseline):
     outer = pair_joint_metrics(env, PAIR_OUTER)
     middle = pair_joint_metrics(env, PAIR_MIDDLE)
     centered_hips = env._centered_hip_thetas()
+    foot_forward_offsets = [float(env._foot_forward_offset(i)) for i in range(4)]
     contacts = [int(v) for v in env._foot_on_ground_flags()]
     planted, planted_quality = env._foot_fully_planted_flags(env._foot_on_ground_flags())
     outer_mean_theta = float(np.mean(centered_hips[list(PAIR_OUTER)]))
@@ -138,6 +139,11 @@ def snapshot_metrics(env, step, reward, baseline):
         "pair_mean_theta_gap": abs(outer_mean_theta - middle_mean_theta),
         "outer_pair_delta_diff": outer_delta_diff,
         "middle_pair_delta_diff": middle_delta_diff,
+        "foot_forward_offsets": foot_forward_offsets,
+        "outer_forward_mean": float(0.5 * (foot_forward_offsets[0] + foot_forward_offsets[3])),
+        "middle_forward_mean": float(0.5 * (foot_forward_offsets[1] + foot_forward_offsets[2])),
+        "outer_forward_pair_diff": abs(foot_forward_offsets[0] - foot_forward_offsets[3]),
+        "middle_forward_pair_diff": abs(foot_forward_offsets[1] - foot_forward_offsets[2]),
         "contacts": contacts,
         "planted": [int(v) for v in planted],
         "planted_quality": [float(v) for v in planted_quality],
@@ -154,6 +160,15 @@ def update_summary(summary, metrics):
     summary["steps"] += 1
     for scalar_key in ("pair_mean_theta_gap", "outer_pair_delta_diff", "middle_pair_delta_diff"):
         value = float(metrics[scalar_key])
+        summary["max"][scalar_key] = max(summary["max"].get(scalar_key, 0.0), value)
+        summary["sum"][scalar_key] = summary["sum"].get(scalar_key, 0.0) + value
+    for scalar_key in (
+        "outer_forward_mean",
+        "middle_forward_mean",
+        "outer_forward_pair_diff",
+        "middle_forward_pair_diff",
+    ):
+        value = float(abs(metrics[scalar_key])) if scalar_key.endswith("_mean") else float(metrics[scalar_key])
         summary["max"][scalar_key] = max(summary["max"].get(scalar_key, 0.0), value)
         summary["sum"][scalar_key] = summary["sum"].get(scalar_key, 0.0) + value
 
@@ -230,6 +245,12 @@ def print_trace(metrics):
     print(
         f"  pair_delta_diff(outer={metrics['outer_pair_delta_diff']:.4f}, "
         f"middle={metrics['middle_pair_delta_diff']:.4f})"
+    )
+    print(
+        f"  forward_mean(outer={metrics['outer_forward_mean']:+.4f}, "
+        f"middle={metrics['middle_forward_mean']:+.4f}) "
+        f"forward_pair_diff(outer={metrics['outer_forward_pair_diff']:.4f}, "
+        f"middle={metrics['middle_forward_pair_diff']:.4f})"
     )
 
 

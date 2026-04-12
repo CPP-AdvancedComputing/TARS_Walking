@@ -21,11 +21,15 @@ def fmt_list(values):
 def leg_rotation_metrics(env):
     centered_hips = env._centered_hip_thetas()
     track_x = [env._track_vector_body(i)[0] for i in range(4)]
+    foot_forward = [env._foot_forward_offset(i) for i in range(4)]
     return {
         "centered_hips": [float(v) for v in centered_hips],
         "track_x": [float(v) for v in track_x],
+        "foot_forward": [float(v) for v in foot_forward],
         "outer_forward_mean": float(0.5 * (track_x[0] + track_x[3])),
         "middle_forward_mean": float(0.5 * (track_x[1] + track_x[2])),
+        "outer_forward_offset_mean": float(0.5 * (foot_forward[0] + foot_forward[3])),
+        "middle_forward_offset_mean": float(0.5 * (foot_forward[1] + foot_forward[2])),
     }
 
 
@@ -75,7 +79,10 @@ def main():
             f"contacts={contacts} planted={planted} qualities={fmt_list(planted_qualities)} "
             f"heights={fmt_list(heights)} "
             f"hips={fmt_list(rotation['centered_hips'])} track_body_x={fmt_list(rotation['track_x'])} "
+            f"foot_fwd={fmt_list(rotation['foot_forward'])} "
             f"outer_fwd={rotation['outer_forward_mean']:+.3f} middle_fwd={rotation['middle_forward_mean']:+.3f} "
+            f"outer_foot_fwd={rotation['outer_forward_offset_mean']:+.3f} "
+            f"middle_foot_fwd={rotation['middle_forward_offset_mean']:+.3f} "
             f"mid_edge={[middle_edge[1]['edge_touch'], middle_edge[2]['edge_touch']]} "
             f"ready={int(ready)} next={next_phase} "
             f"next_contact={env.last_next_plant_contact_fraction:.2f} "

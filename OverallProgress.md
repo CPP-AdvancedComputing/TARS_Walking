@@ -25,6 +25,21 @@ From this point forward, every meaningful change should be added here.
 - Current limitation:
   - from this shell, `/mnt/c/Users/anike/tars-urdf` is not currently recognized as a Git repository, so I can maintain this file now but cannot commit or push from here until the workspace is attached to a real Git checkout.
 
+## Resolved / Do Not Repeat
+
+- Do not repeat pre-pairlock per-leg phase-0 pose searches:
+  - canonical phase-0 reset was already repaired by the pair-shared phase-0 offsets plus stronger middle-pair feedback
+  - use the deterministic verifier from `start_phase = 0` as the reference check instead
+- Do not treat raw touch-only contact as planted support:
+  - the project now uses stricter planted-quality semantics
+  - edge touch during return does not automatically count as valid support
+- Do not use stale return-search harnesses as primary evidence:
+  - older timing-only and chain-return sweeps can report flat or misleading results under the current env logic
+  - prefer `search_phase2_return_mechanics.py` plus chained trace / verifier output
+- Do not accept runs that bypass transitions:
+  - contact timing alone is not success
+  - every meaningful validation should be cross-checked against the reference video and the current phase mechanics requirements
+
 ## Canonical Reference Media
 
 - High-priority visual reference video to cross-check the intended gait:
@@ -212,6 +227,18 @@ This is a top-priority invariant and must be checked continuously going forward.
 - Return transition clarification:
   - for `phase 2 -> 0`, the edge of the middle legs should touch the ground while the outer legs rotate forward, returning to phase `0`
   - this clarification is authoritative and should be used in future transition tuning and verification
+- Phase-2 geometry clarification:
+  - in `phase 2`, the outer legs (`l0`, `l3`) should be perpendicular to the ground
+  - the inner legs (`l1`, `l2`) should be rotated outward
+  - during `2 -> 0`, `l1` and `l2` should lean forward to become perpendicular on the ground
+  - at the same time, `l0` and `l3` should rotate forward
+  - TARS should lean into that transfer so the outer pair (`l0`, `l3`) become perpendicular to the ground as the return completes
+  - this is a high-priority mechanical requirement and should be checked against the reference video, not inferred only from contact timing
+  - verification tooling must explicitly log:
+    - outer-pair forward offset
+    - middle-pair forward offset
+    - pairwise forward-offset symmetry
+    - these metrics are now part of the ongoing verifier / chain-trace path
 - Desired planted-foot interpretation:
   - not just “touching the ground”
   - a planted foot should be meaningfully on the ground, approximated in code by a stricter planted-quality test rather than raw contact alone
@@ -248,6 +275,17 @@ Current working hypothesis:
 - the right next fixes should act upstream in target generation and phase-transition control, then be checked with the deterministic tripedal verifier
 
 ## Latest Update
+
+- Added geometry-specific verification for the new phase-2 / `2 -> 0` requirement:
+  - [verify_tripedal_pair_gait.py](/mnt/c/Users/anike/tars-urdf/verify_tripedal_pair_gait.py) now logs:
+    - outer/middle forward mean
+    - outer/middle forward pair difference
+  - [diagnose_phase_chain_trace.py](/mnt/c/Users/anike/tars-urdf/diagnose_phase_chain_trace.py) now logs:
+    - per-leg foot forward offsets
+    - outer/middle forward-offset means
+  - purpose:
+    - stop relying on contact-mask-only interpretation for phase-2 posture and return mechanics
+    - make the next return fixes measurable against the user’s clarified geometry
 
 - Found a real return-path regression in the support-latch implementation:
   - `_begin_phase()` was not resetting `phase_switch_support_latched`
