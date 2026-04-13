@@ -25,6 +25,23 @@ From this point forward, every meaningful change should be added here.
 - Current limitation:
   - from this shell, `/mnt/c/Users/anike/tars-urdf` is not currently recognized as a Git repository, so I can maintain this file now but cannot commit or push from here until the workspace is attached to a real Git checkout.
 
+## Imported Summary Reconciliation
+
+- Preserved imported refactor summary:
+  - [USER_REFACTOR_SUMMARY_20260412.md](/mnt/c/Users/anike/tars-urdf/USER_REFACTOR_SUMMARY_20260412.md)
+- Use that file as:
+  - a bug-history reference
+  - a tooling/workflow reference
+  - a reminder of previously fixed reward/curriculum/action-space issues
+- Do not use that file as the live gait authority:
+  - it describes a 2-phase tripod gait
+  - current authoritative gait remains the user-defined 3-phase cycle in this file
+- Reconciliation result on 2026-04-12:
+  - reward / `progress_gate` / curriculum direction items from the imported summary are already present in the current code path
+  - the imported-summary visualization entrypoint was missing in the live tree
+  - added [visualize.py](/mnt/c/Users/anike/tars-urdf/visualize.py) as a reusable headless diagnostic/renderer so current work can be checked visually without depending only on lower-level verifier scripts
+  - `submit_train.py` from the imported summary is still absent from the live tree; low priority relative to the current gait-mechanics blockers because `tide_tars.py` already covers TIDE submission
+
 ## Resolved / Do Not Repeat
 
 - Do not repeat pre-pairlock per-leg phase-0 pose searches:
@@ -254,10 +271,29 @@ More specifically:
 
 - `phase 0 -> phase 1` now has a validated real chained-runtime switch after the pre-step switch fix
 - `phase 1 -> phase 2` now also switches in the chained runtime, but too late and only by force-advance
-- current direct trace for `phase 1 -> 2` shows:
+  - current direct trace for `phase 1 -> 2` shows:
   - leg `2` does not become a fully planted next-support foot early enough
   - the outer pair unload asymmetrically, with leg `3` clearing much earlier than leg `0`
-- the transition must preserve the user’s movement requirement:
+  - the transition must preserve the user’s movement requirement:
+
+## Current Active Blocker Snapshot
+
+- Latest reset-based phase-0 verifier result:
+  - [run_logs/tide_verify_phase0_reference_20260412_resetholdfix2.log](/mnt/c/Users/anike/tars-urdf/run_logs/tide_verify_phase0_reference_20260412_resetholdfix2.log)
+- Current verdict from that run:
+  - `outer_theta_ok = true`
+  - `middle_theta_ok = false`
+  - `outer_joint_pairing_ok = false`
+  - `middle_joint_pairing_ok = false`
+  - `outer_foot_pairing_ok = false`
+  - `middle_foot_pairing_ok = true`
+  - overall `pass = false`
+- Interpretation:
+  - the newer reset-hold phase-0 offsets improved phase-0 support shape enough to recover planted `[1,0,0,1]` part of the time
+  - but dynamic pair-lock and foot-track symmetry still collapse during live stepping from the real reset path
+  - current top blocker is therefore still:
+    - restoring stable canonical phase-0 hold under the real reset pipeline
+  - do not resume long training until that verifier passes again from reset
   - legs `0` and `3` should remain in place as supports
   - legs `1` and `2` should be the pair that rotate up / transition on their own
 - “rotate up” means rotational swing/unload, not pure vertical translation
@@ -313,6 +349,95 @@ Current working hypothesis:
   - updated interpretation:
     - the next fix for `2 -> 0` should be more localized than broad phase-2 pose forcing
     - likely candidates are transition-only return targets / return-only control offsets rather than phase-wide reference reshaping
+- New localized return-only patch applied:
+  - kept phase-wide references unchanged
+  - added transition-only shaping inside `_swing_target_world()` for phase `2`
+  - changes:
+    - phase-2 liftoff legs (`l1`,`l2`) now cap vertical lift to a low edge-touch height instead of rising into a full swing arc
+    - phase-2 liftoff legs get a small forward bias during late return settlement
+    - phase-2 touchdown legs (`l0`,`l3`) get a small forward bias during touchdown progression
+  - rationale:
+    - match the clarified requirement more directly:
+      - middle pair leans forward and edge-touches during `2 -> 0`
+      - outer pair rotates forward into the return support
+    - avoid repeating the earlier failed broad phase-2 posture forcing
+
+### 2026-04-12 - Reset-based verifier shows current env regression before return can be evaluated
+
+- Ran reset-based remote verifier:
+  - [run_logs/tide_verify_phase0_reference_20260412.log](/mnt/c/Users/anike/tars-urdf/run_logs/tide_verify_phase0_reference_20260412.log)
+- Important result:
+  - this is not only a manual chained-trace startup issue
+  - the full `reset(start_phase=0)` pipeline currently fails to hold canonical phase `0`
+- Observed behavior:
+  - initial planted support is only partially correct:
+    - `contacts = [1,0,1,1]`
+    - `planted = [1,0,0,1]`
+  - under zero-action stepping, phase `0` never progresses to a clean `0 -> 1` handoff
+  - instead it degrades toward mixed support such as `[1,1,1,0]`
+  - verifier verdict is now fully failing again
+- Interpretation:
+  - before more `2 -> 0` tuning, the higher-priority blocker is restoring a stable canonical phase-0 hold in the actual reset pipeline
+  - next non-redundant diagnostic is zero-action / reference control consistency under the current env, not more return tuning
+
+### 2026-04-12 - Zero-action consistency is intact; reset support recapture is the next fix
+
+- Ran control-consistency diagnostic:
+  - [run_logs/tide_diag_phase_control_consistency_20260412.log](/mnt/c/Users/anike/tars-urdf/run_logs/tide_diag_phase_control_consistency_20260412.log)
+- Result:
+  - zero-action control still matches the phase reference exactly in phases `0`, `1`, and `2`
+  - this rules out the earlier controller-mismatch class of failure for the current regression
+- New interpretation:
+  - the broken phase-0 hold is now most likely in reset / settled support recapture, not in zero-action calibration
+- Code change kept:
+  - after high-gain settle, reset now calls `_begin_phase(start_phase, preserve_ground_contacts=True)`
+  - after the short production-gain settle, reset re-primes the phase again with `preserve_ground_contacts=True`
+  - rationale:
+    - do not throw away the actual settled support state and replace it with generic grounded targets immediately before rollout start
+- Follow-up result:
+  - reset support recapture did not change the reset-based verifier outcome
+  - therefore the next non-redundant step is not more recapture tweaking
+  - instead, search the actual reset-hold behavior directly
+- New tooling added:
+  - [search_phase0_reset_hold_pose.py](/mnt/c/Users/anike/tars-urdf/search_phase0_reset_hold_pose.py)
+  - purpose:
+    - search pair-shared phase-0 offsets against the real `reset(start_phase=0)` zero-action hold
+    - score canonical phase-0 planted support over time, not only direct pose snapshots
+  - this replaces the stale assumption that the older direct-pose phase-0 search is still sufficient
+- Search result:
+  - [run_logs/tide_search_phase0_reset_hold_pose_20260412.log](/mnt/c/Users/anike/tars-urdf/run_logs/tide_search_phase0_reset_hold_pose_20260412.log)
+  - best family of candidates all converged on:
+    - stronger outer-pair hip offset: about `+0.35`
+    - stronger middle-pair hip offset: about `-0.35`
+    - reduced middle-pair knee tuck relative to the old setting
+  - best score summary:
+    - `best_match = 1.000`
+    - `mean_match = 0.975`
+    - `outer_contact = 0.950`
+    - `middle_clear = 1.000`
+    - `switched = 0`
+- Code change kept:
+  - first updated phase-0 pair-shared offsets in [tars_env.py](/mnt/c/Users/anike/tars-urdf/tars_env.py) to a best-family candidate:
+    - outer pair `(l0,l3) = [0.00, +0.35, -0.05]`
+    - middle pair `(l1,l2) = [-0.10, -0.35, -0.05]`
+- Rationale:
+  - this is the first search that directly optimizes the real reset-held phase-0 support, not just a direct pose snapshot
+  - it is therefore the current highest-confidence repair for the active phase-0 regression
+- Follow-up reset-based verifier result:
+  - [run_logs/tide_verify_phase0_reference_20260412_resetholdfix.log](/mnt/c/Users/anike/tars-urdf/run_logs/tide_verify_phase0_reference_20260412_resetholdfix.log)
+  - improvement:
+    - `outer_theta_ok` returned to `true`
+    - `middle_foot_pairing_ok` returned to `true`
+    - phase-0 rollout spends much more time near `[1,0,0,1]`
+  - remaining problem:
+    - initial state still starts with weak outer support on one side
+    - full pass is not restored yet
+  - next refinement kept:
+    - move from the best-family candidate to the exact top-ranked search candidate:
+      - outer pair `(l0,l3) = [-0.05, +0.35, -0.10]`
+      - middle pair `(l1,l2) = [-0.15, -0.35, -0.05]`
+    - rationale:
+      - the remaining miss is small enough that the exact shoulder/knee values may matter for initial support capture
 
 - Found a real return-path regression in the support-latch implementation:
   - `_begin_phase()` was not resetting `phase_switch_support_latched`

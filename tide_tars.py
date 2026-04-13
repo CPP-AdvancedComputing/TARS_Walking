@@ -57,6 +57,7 @@ SYNC_FILES = [
     "search_phase0_offlegs_direct_pose.py",
     "search_phase0_l2_tracksite_offsets.py",
     "search_phase0_pairlock_pose.py",
+    "search_phase0_reset_hold_pose.py",
     "search_phase0_transition_touchdown_offsets.py",
     "search_phase0_transition_touchdown_target_offsets.py",
     "search_phase1_l1_direct_pose.py",
@@ -74,6 +75,7 @@ SYNC_FILES = [
     "test_l1_axis_candidates.py",
     "test_l1_mjcf_pose_candidates.py",
     "test_l1_pure_phase_hold_candidates.py",
+    "visualize.py",
     "verify_tripedal_pair_gait.py",
 ]
 

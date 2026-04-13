@@ -146,8 +146,8 @@ class TARSEnv(gymnasium.Env):
     }
     PHASE_PAIR_CTRL_OFFSETS = {
         0: {
-            (0, 3): np.array([0.0, 0.25, -0.05], dtype=np.float64),
-            (1, 2): np.array([-0.10, -0.25, -0.10], dtype=np.float64),
+            (0, 3): np.array([-0.05, 0.35, -0.10], dtype=np.float64),
+            (1, 2): np.array([-0.15, -0.35, -0.05], dtype=np.float64),
         },
     }
     IK_DAMPING = 5e-4
@@ -322,6 +322,15 @@ class TARSEnv(gymnasium.Env):
         1: 0.65,
         2: 0.65,
         3: 0.75,
+    }
+    PHASE_LIFTOFF_EDGE_TOUCH_HEIGHT = {
+        2: FOOT_HALF_HEIGHT + 0.006,
+    }
+    PHASE_LIFTOFF_FORWARD_BIAS = {
+        2: 0.020,
+    }
+    PHASE_TOUCHDOWN_FORWARD_BIAS = {
+        2: 0.020,
     }
     def __init__(self, model_path=None):
         resolved_model_path = resolve_model_path(model_path)
@@ -2199,6 +2208,10 @@ class TARSEnv(gymnasium.Env):
                 target[2] = current[2] + (peak_track_z - current[2]) * np.sin(0.5 * np.pi * lift_progress)
             else:
                 target[2] = peak_track_z + (desired[2] - peak_track_z) * settle_progress
+        if motion_role == "liftoff":
+            edge_touch_height = self.PHASE_LIFTOFF_EDGE_TOUCH_HEIGHT.get(phase)
+            if edge_touch_height is not None:
+                target[2] = min(target[2], edge_touch_height)
         max_z_step = self.SWING_TARGET_MAX_Z_STEP
         if motion_role == "touchdown":
             max_z_step = self.TOUCHDOWN_TARGET_MAX_Z_STEP
@@ -2216,6 +2229,7 @@ class TARSEnv(gymnasium.Env):
                 1.0,
             ))
             target[0] = (1.0 - touchdown_progress) * top_anchor[0] + touchdown_progress * desired[0]
+            target[0] += touchdown_progress * self.PHASE_TOUCHDOWN_FORWARD_BIAS.get(phase, 0.0)
             target[0] = current[0] + np.clip(
                 target[0] - current[0],
                 -self.TOUCHDOWN_TARGET_MAX_X_STEP,
@@ -2231,6 +2245,8 @@ class TARSEnv(gymnasium.Env):
                 1.0,
             ))
             target[0] = (1.0 - settle_x_progress) * top_anchor[0] + settle_x_progress * desired[0]
+            if motion_role == "liftoff":
+                target[0] += settle_x_progress * self.PHASE_LIFTOFF_FORWARD_BIAS.get(phase, 0.0)
         return target
 
     def _prime_phase_targets(self, phase, allow_contact_capture=False):
@@ -2394,7 +2410,7 @@ class TARSEnv(gymnasium.Env):
         self.phase = start_phase
         self.phase_timer = 0
         self._initialize_rod_targets()
-        self._begin_phase(start_phase)
+        self._begin_phase(start_phase, preserve_ground_contacts=True)
         ik_ctrl = self._scale_action(self.zero_action(), phase=start_phase)
         self.data.ctrl[:] = ik_ctrl
         for i, name in enumerate(self.joint_names):
@@ -2403,6 +2419,10 @@ class TARSEnv(gymnasium.Env):
         for _ in range(50):
             mujoco.mj_step(self.model, self.data)
         mujoco.mj_forward(self.model, self.data)
+        # Re-prime the phase bookkeeping from the production-gain settled pose
+        # so the rollout starts from the actual grounded support state rather
+        # than the pre-settle target capture.
+        self._begin_phase(start_phase, preserve_ground_contacts=True)
 
         self.reset_track_vectors_body = {
             leg_id: self._track_vector_body(leg_id).copy()
